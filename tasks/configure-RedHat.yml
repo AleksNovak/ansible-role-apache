@@ -2,10 +2,22 @@
 - name: Configure Apache.
   lineinfile:
     dest: "{{ apache_server_root }}/conf/{{ apache_daemon }}.conf"
-    regexp: "{{ item.regexp }}"
-    line: "{{ item.line }}"
-    state: present
-  with_items: "{{ apache_ports_configuration_items }}"
+    regexp: "^Listen "
+    line: "Listen "
+    state: absent
+  notify: restart apache
+
+- name: Configure port.conf
+  template:
+    src: "port.conf.j2"
+    dest: "{{ apache_server_root }}/conf/port.conf"
+  notify: restart apache
+
+- name: Include port.conf
+  lineinfile:
+    dest: "{{ apache_server_root }}/conf/{{ apache_daemon }}.conf"
+    insertafter: "^#Listen"
+    line: "Include conf/port.conf"
   notify: restart apache
 
 - name: Check whether certificates defined in vhosts exist.
@@ -16,9 +28,14 @@
 - name: Add apache vhosts configuration.
   template:
     src: "{{ apache_vhosts_template }}"
-    dest: "{{ apache_conf_path }}/{{ apache_vhosts_filename }}"
+    dest: "{{ apache_conf_path }}/{{ item.name }}.conf"
     owner: root
     group: root
     mode: 0644
+    #validate: "/usr/sbin/httpd -t -f %s"
+  notify: restart apache
+
+  with_items:
+    - "{{ apache_vhosts }}"
   notify: restart apache
   when: apache_create_vhosts

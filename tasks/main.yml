@@ -36,6 +36,11 @@
   when: "apache_version.split('.')[1] == '4'"
 
 # Configure Apache.
+- name: Build Host Listen port fact
+  set_fact:
+    host_listen_port: "[]{% for host in apache_vhosts %} + ['{{ host.listen_port | default(apache_listen_port) }}']{% endfor %}"
+  when: apache_create_vhosts
+
 - include: "configure-{{ ansible_os_family }}.yml"
   static: no
 

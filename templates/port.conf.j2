@@ -1,0 +1,4 @@
+# {{ ansible_managed }}
+{% for port in host_listen_port %}
+Listen {{ port }}
+{% endfor %}
